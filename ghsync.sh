@@ -13,13 +13,13 @@ FALSE=0
 
 function usage() {
 	TEXT="
-		USAGE: \n
-		\t${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION] \n
-		\t-u USERNAME      your Github username \n
-		\t-t TOKEN         your token - if you don't have one generate one from https://github.com/settings/tokens \n
-		\t-h               display this menu \n
-		\t-d               debug mode \n
-		\t-c CONNECTION    connection to GitHub either 'ssh' or 'git', defaults to 'ssh'
+		Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION] \n
+		\t-u USERNAME ===> your Github username \n
+		\t-t TOKEN ======> your token - if you don't have one generate one from https://github.com/settings/tokens \n
+		\t-h ============> display this menu \n
+		\t-d ============> debug mode \n
+		\t-x ============> does a dry run without actually doing any git operations \n
+		\t-c CONNECTION => connection to GitHub either 'ssh' or 'git', defaults to 'ssh'
 	"
 	if [[ $1 == $TRUE ]]; then
 		echo -e $TEXT 1>&2
@@ -28,13 +28,17 @@ function usage() {
 	fi
 }
 
+function dry() {
+	echo -e "${BLUE}[DRY_RUN] $1${END}"
+}
+
 function debug() {
 	echo -e "${YELLOW}[DEBUG] $1${END}"
 }
 
 DEBUG=$FALSE
 
-while getopts "hdu:t:c:" O; do
+while getopts "hdxu:t:c:" O; do
 	case "${O}" in
 		h)
 			usage
@@ -52,6 +56,9 @@ while getopts "hdu:t:c:" O; do
 		c)
 			CONNECTION="${OPTARG}"
 			;;
+		x)
+			DRY_RUN=$TRUE
+			;;
 		*)
 			usage
 			exit 0
@@ -65,8 +72,6 @@ if [[ -z $USERNAME ]] || [[ -z $TOKEN ]]; then
 	exit 1
 fi
 
-exit 1
-
 DEPS=('jq' 'cat' 'less' 'curl' 'git' 'sed' 'bc')
 
 for DEP in "${DEPS[@]}"; do
@@ -78,9 +83,6 @@ for DEP in "${DEPS[@]}"; do
 		exit 1
 	fi
 done
-
-#USERNAME=$1
-#TOKEN=$2
 
 GITHUB_BASE='https://api.github.com'
 GITHUB_PER_PAGE=30
@@ -162,19 +164,35 @@ for GH_URL in "${URLS[@]}"; do
 
 		BRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 
-		git checkout master
+		if [[ $DRY_RUN -eq $TRUE ]]; then
+			dry "checking out master"
+		else
+			git checkout master
+		fi
 
 		# if checkout errors while switching to master just fetch
 		if [[ $? -ne 0 ]]; then
-			git fetch
+			if [[ $DRY_RUN -eq $TRUE ]]; then
+				dry "checkout failed, fetching"
+			else
+				git fetch
+			fi
 		else
-			git pull origin master
-			git checkout $BRANCH
+			if [[ $DRY_RUN -eq $TRUE ]]; then
+				dry "pull origin and switching back to original branch: ${BRANCH}"
+			else
+				git pull origin master
+				git checkout $BRANCH
+			fi
 		fi
 
 		popd
 	else
-		git clone $GH_SSH_URL
-		git remote set-url origin $GH_SSH_URL
+		if [[ $DRY_RUN -eq $TRUE ]]; then
+			dry "cloning ${GH_SSH_URL}"
+		else
+			git clone $GH_SSH_URL
+			git remote set-url origin $GH_SSH_URL
+		fi
 	fi
 done
