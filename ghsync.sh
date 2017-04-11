@@ -8,20 +8,83 @@ GREEN="\033[0;32m"
 YELLOW="\033[0;33m"
 BLUE="\033[0;34m"
 
+TRUE=1
+FALSE=0
+
 function usage() {
-	echo 'USAGE:'
-	echo -e "\t./gh_sync.sh <USERNAME> <TOKEN>"
-	echo -e "\tUSERNAME: your GitHub username"
-	echo -e "\tTOKEN: your token - if you don't have one generate one from https://github.com/settings/tokens"
+	TEXT="
+		Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION] \n
+		\t-u USERNAME ===> your Github username \n
+		\t-t TOKEN ======> your token - if you don't have one generate one from https://github.com/settings/tokens \n
+		\t-h ============> display this menu \n
+		\t-d ============> debug mode \n
+		\t-x ============> does a dry run without actually doing any git operations \n
+		\t-c CONNECTION => connection to GitHub either 'ssh' or 'git', defaults to 'ssh' \n
+		\t-v ============> verbose logging
+	"
+	if [[ $1 == $TRUE ]]; then
+		echo -e $TEXT 1>&2
+	else
+		echo -e $TEXT
+	fi
+}
+
+function dry() {
+	echo -e "${BLUE}[DRY_RUN] $1${END}"
 }
 
 function debug() {
 	echo -e "${YELLOW}[DEBUG] $1${END}"
 }
 
-if [[ $# -ne 2 ]]; then
-	echo -e "${RED}Illegal number of parameters\n${END}"
-	usage
+function verbose() {
+	echo -e "${GREEN}[VERBOSE] $1${END}"
+}
+
+function log() {
+	echo -e "[LOG] $1"
+}
+
+DEBUG=$FALSE
+VERBOSE=$FALSE
+DRY_RUN=$FALSE
+TOKEN=''
+USERNAME=''
+
+while getopts "hdxvu:t:c:" O; do
+	case "${O}" in
+		h)
+			usage
+			exit 0
+			;;
+		d)
+			DEBUG=$TRUE
+			;;
+		u)
+			USERNAME="${OPTARG}"
+			;;
+		t)
+			TOKEN="${OPTARG}"
+			;;
+		c)
+			CONNECTION="${OPTARG:-ssh}"
+			;;
+		x)
+			DRY_RUN=$TRUE
+			;;
+		v)
+			VERBOSE=$TRUE
+			;;
+		*)
+			usage
+			exit 0
+			;;
+	esac
+done
+shift $((OPTIND - 1))
+
+if [[ -z $USERNAME ]] || [[ -z $TOKEN ]]; then
+	usage $TRUE
 	exit 1
 fi
 
@@ -37,14 +100,11 @@ for DEP in "${DEPS[@]}"; do
 	fi
 done
 
-USERNAME=$1
-TOKEN=$2
-
 GITHUB_BASE='https://api.github.com'
 GITHUB_PER_PAGE=30
 
 USER_FILE=$(mktemp)
-if [[ "$DEBUG" == true ]]; then
+if [[ $DEBUG -eq $TRUE ]]; then
 	debug "${YELLOW}${USER_FILE}${END}"
 fi
 
@@ -60,12 +120,12 @@ fi
 
 # Query user information and get total repository count (private + public) that are owned by $USERNAME
 REPO_COUNT=$(less $USER_FILE | jq '.owned_private_repos , .public_repos' | paste -sd+ | bc)
-if [[ "$DEBUG" == true ]]; then
+if [[ $DEBUG -eq $TRUE ]]; then
 	debug $REPO_COUNT
 fi
 
 REPO_FILE=$(mktemp)
-if [[ "$DEBUG" == true ]]; then
+if [[ $DEBUG -eq $TRUE ]]; then
 	debug $REPO_FILE
 fi
 
@@ -88,14 +148,14 @@ while [ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]; do
 	fi
 
 	CHUNKED_URLS=$(less $REPO_FILE | jq '.[] | .clone_url')
-	if [[ "$DEBUG" == true ]]; then
+	if [[ $DEBUG -eq $TRUE ]]; then
 		debug $CHUNKED_URLS
 	fi
 
 
 	while read -r GH_URL; do
 		URLS+=("${GH_URL}")
-		if [[ "$DEBUG" == true ]]; then
+		if [[ $DEBUG -eq $TRUE ]]; then
 			debug "Working on: ${GH_URL}"
 		fi
 	done <<< "$CHUNKED_URLS"
@@ -109,7 +169,7 @@ ssh-agent add ~/.ssh/id_rsa
 for GH_URL in "${URLS[@]}"; do
 	DIRECTORY=$(echo $GH_URL | sed $EXTRACTION_PATTERN | sed $STRIP_QUOTATIONS_PATTERN)
 	GH_SSH_URL="git@github.com:${USERNAME}/${DIRECTORY}.git"
-	if [[ "$DEBUG" == true ]]; then
+	if [[ $DEBUG -eq $TRUE ]]; then
 		debug "DIRECTORY: ${DIRECTORY}"
 	fi
 
@@ -120,19 +180,35 @@ for GH_URL in "${URLS[@]}"; do
 
 		BRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 
-		git checkout master
+		if [[ $DRY_RUN -eq $TRUE ]]; then
+			dry "checking out master"
+		else
+			git checkout master
+		fi
 
 		# if checkout errors while switching to master just fetch
 		if [[ $? -ne 0 ]]; then
-			git fetch
+			if [[ $DRY_RUN -eq $TRUE ]]; then
+				dry "checkout failed, fetching"
+			else
+				git fetch
+			fi
 		else
-			git pull origin master
-			git checkout $BRANCH
+			if [[ $DRY_RUN -eq $TRUE ]]; then
+				dry "pull origin and switching back to original branch: ${BRANCH}"
+			else
+				git pull origin master
+				git checkout $BRANCH
+			fi
 		fi
 
 		popd
 	else
-		git clone $GH_SSH_URL
-		git remote set-url origin $GH_SSH_URL
+		if [[ $DRY_RUN -eq $TRUE ]]; then
+			dry "cloning ${GH_SSH_URL}"
+		else
+			git clone $GH_SSH_URL
+			git remote set-url origin $GH_SSH_URL
+		fi
 	fi
 done
