@@ -8,7 +8,7 @@ GREEN="\033[0;32m"
 YELLOW="\033[0;33m"
 BLUE="\033[0;34m"
 
-function printUsage() {
+function usage() {
 	echo 'USAGE:'
 	echo -e "\t./gh_sync.sh <USERNAME> <TOKEN>"
 	echo -e "\tUSERNAME: your GitHub username"
@@ -21,7 +21,7 @@ function debug() {
 
 if [[ $# -ne 2 ]]; then
 	echo -e "${RED}Illegal number of parameters\n${END}"
-	printUsage
+	usage
 	exit 1
 fi
 
