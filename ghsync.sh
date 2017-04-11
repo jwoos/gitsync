@@ -19,7 +19,8 @@ function usage() {
 		\t-h ============> display this menu \n
 		\t-d ============> debug mode \n
 		\t-x ============> does a dry run without actually doing any git operations \n
-		\t-c CONNECTION => connection to GitHub either 'ssh' or 'git', defaults to 'ssh'
+		\t-c CONNECTION => connection to GitHub either 'ssh' or 'git', defaults to 'ssh' \n
+		\t-v ============> verbose logging
 	"
 	if [[ $1 == $TRUE ]]; then
 		echo -e $TEXT 1>&2
@@ -36,9 +37,21 @@ function debug() {
 	echo -e "${YELLOW}[DEBUG] $1${END}"
 }
 
-DEBUG=$FALSE
+function verbose() {
+	echo -e "${GREEN}[VERBOSE] $1${END}"
+}
 
-while getopts "hdxu:t:c:" O; do
+function log() {
+	echo -e "[LOG] $1"
+}
+
+DEBUG=$FALSE
+VERBOSE=$FALSE
+DRY_RUN=$FALSE
+TOKEN=''
+USERNAME=''
+
+while getopts "hdxvu:t:c:" O; do
 	case "${O}" in
 		h)
 			usage
@@ -54,10 +67,13 @@ while getopts "hdxu:t:c:" O; do
 			TOKEN="${OPTARG}"
 			;;
 		c)
-			CONNECTION="${OPTARG}"
+			CONNECTION="${OPTARG:-ssh}"
 			;;
 		x)
 			DRY_RUN=$TRUE
+			;;
+		v)
+			VERBOSE=$TRUE
 			;;
 		*)
 			usage
