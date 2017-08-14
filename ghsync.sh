@@ -192,6 +192,7 @@ fi
 for GH_URL in "${URLS[@]}"; do
 	DIRECTORY=$(echo $GH_URL | sed $EXTRACTION_PATTERN | sed $STRIP_QUOTATIONS_PATTERN)
 	GH_SSH_URL="git@github.com:${USERNAME}/${DIRECTORY}.git"
+	GH_HTTPS_URL="https://github.com/${USERNAME}/${DIRECTORY}.git"
 	if [[ $DEBUG -eq $TRUE ]]; then
 		debug "DIRECTORY: ${DIRECTORY}"
 	fi
@@ -231,7 +232,6 @@ for GH_URL in "${URLS[@]}"; do
 			dry "cloning ${GH_SSH_URL}"
 		else
 			git clone $GH_SSH_URL
-			git remote set-url origin $GH_SSH_URL
 		fi
 	fi
 done
