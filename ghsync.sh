@@ -116,14 +116,14 @@ GITHUB_PER_PAGE=30
 
 USER_FILE=$(mktemp)
 if [[ $DEBUG -eq $TRUE ]]; then
-	debug "${YELLOW}${USER_FILE}${END}"
+	debug "USER_FILE: ${USER_FILE}"
 fi
 
 curl -s -u $USERNAME:$TOKEN $GITHUB_BASE/user > $USER_FILE
 
 # User has lots of keys, it should be bigger than 8 if successful
 if [[ $(less $USER_FILE | jq 'length' 2>/dev/null) -lt 8 ]]; then
-	echo -e "${RED}Error fetching user${END}"
+	error "Error fetching user"
 	echo 'Response: '
 	cat $USER_FILE
 	exit 1
@@ -132,15 +132,15 @@ fi
 # Query user information and get total repository count (private + public) that are owned by $USERNAME
 REPO_COUNT=$(less $USER_FILE | jq '.owned_private_repos , .public_repos' | paste -sd+ | bc)
 if [[ $DEBUG -eq $TRUE ]]; then
-	debug $REPO_COUNT
+	debug "REPO_COUNT: ${REPO_COUNT}"
 fi
 
 REPO_FILE=$(mktemp)
 if [[ $DEBUG -eq $TRUE ]]; then
-	debug $REPO_FILE
+	debug "REPO_FILE: ${REPO_FILE}"
 fi
 
-EXTRACTION_PATTERN="s/https:\/\/github.com\/${USERNAME}\/\([a-zA-Z0-9_-]\+\)\.git/\1/"
+EXTRACTION_PATTERN="s/https:\/\/github.com\/${USERNAME}\/\([a-zA-Z0-9_-]\+\)\.git$/\1/"
 STRIP_QUOTATIONS_PATTERN="s/\"//g"
 
 PAGE=0
@@ -151,15 +151,16 @@ while [[ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]]; do
 
 	# Check if in an array and has message
 	if [[ -z $(less $REPO_FILE | jq '.[] | .message' 2>/dev/null) ]]; then
-		echo -e "${RED}Error fetching repositories${END}"
+		error "Error fetching repositories"
 		echo 'Response: '
 		cat $REPO_FILE
 		exit 1
 	fi
 
 	CHUNKED_URLS=$(less $REPO_FILE | jq '.[] | .clone_url')
+
 	if [[ $DEBUG -eq $TRUE ]]; then
-		debug $CHUNKED_URLS
+		debug "NEW PAGE"
 	fi
 
 
