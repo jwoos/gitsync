@@ -11,6 +11,12 @@ BLUE="\033[0;34m"
 TRUE=1
 FALSE=0
 
+trap "cleanUp" SIGINT SIGTERM
+
+function cleanUp() {
+	debug "CLEANING UP"
+}
+
 function usage() {
 	TEXT="
 		Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION] \n
@@ -19,10 +25,11 @@ function usage() {
 		\t-h ============> display this menu \n
 		\t-d ============> debug mode \n
 		\t-x ============> does a dry run without actually doing any git operations \n
-		\t-c CONNECTION => connection to GitHub either 'ssh' or 'git', defaults to 'ssh' \n
+		\t-c CONNECTION => connection to GitHub either 'ssh' or 'https', defaults to 'ssh' \n
 		\t-v ============> verbose logging
 	"
-	if [[ $1 == $TRUE ]]; then
+
+	if [[ $1 -eq $TRUE ]]; then
 		echo -e $TEXT 1>&2
 	else
 		echo -e $TEXT
@@ -43,6 +50,10 @@ function verbose() {
 
 function log() {
 	echo -e "[LOG] $1"
+}
+
+function error() {
+	echo -e "${RED}[ERROR] $1${END}"
 }
 
 DEBUG=$FALSE
@@ -94,7 +105,7 @@ for DEP in "${DEPS[@]}"; do
 	type $DEP > /dev/null 2>&1
 
 	if [[ $? -ne 0 ]]; then
-		echo -e "${RED}MISSING DEPENDENCY: ${DEP}${END}"
+		error "MISSING DEPENDENCY: ${DEP}"
 		echo -e "Please install ${DEP} and try again"
 		exit 1
 	fi
@@ -131,12 +142,11 @@ fi
 
 EXTRACTION_PATTERN="s/https:\/\/github.com\/${USERNAME}\/\([a-zA-Z0-9_-]\+\)\.git/\1/"
 STRIP_QUOTATIONS_PATTERN="s/\"//g"
-PID_EXTRACTION_PATTERN="s/Agent pid \([0-9]\+\)$/\1/"
 
 PAGE=0
 URLS=()
 
-while [ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]; do
+while [[ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]]; do
 	curl -s -H "Authorization: token ${TOKEN}" "${GITHUB_BASE}/user/repos?type=owner&page=$((PAGE+1))" > $REPO_FILE
 
 	# Check if in an array and has message
@@ -163,8 +173,21 @@ while [ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]; do
 	((PAGE+=1))
 done
 
-SSH_AGENT_PID=$(eval $(ssh-agent -s)) | sed $PID_EXTRACTION_PATTERN
-ssh-agent add ~/.ssh/id_rsa
+if [[ $CONNECTION == 'ssh' ]]; then
+	# SSH_AGENT_PID is provided by the following command
+	eval $(ssh-agent -s)
+	ssh-add ~/.ssh/id_rsa
+
+	if [[ $DEBUG -eq $TRUE ]]; then
+		debug "SSH agent PID: ${SSH_AGENT_PID}"
+	fi
+elif [[ $CONNECTION == 'https' ]]; then
+	error "HTTPS not implemented yet"
+	exit 1
+else
+	error "Invalid connection"
+	exit 1
+fi
 
 for GH_URL in "${URLS[@]}"; do
 	DIRECTORY=$(echo $GH_URL | sed $EXTRACTION_PATTERN | sed $STRIP_QUOTATIONS_PATTERN)
@@ -212,3 +235,7 @@ for GH_URL in "${URLS[@]}"; do
 		fi
 	fi
 done
+
+if [[ $CONNECTION == 'ssh' ]]; then
+	kill $SSH_AGENT_PID
+fi
