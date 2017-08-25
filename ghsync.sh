@@ -140,7 +140,7 @@ if [[ $DEBUG -eq $TRUE ]]; then
 	debug "REPO_FILE: ${REPO_FILE}"
 fi
 
-EXTRACTION_PATTERN="s/https:\/\/github.com\/${USERNAME}\/\([a-zA-Z0-9_-]\+\)\.git$/\1/"
+EXTRACTION_PATTERN="s/https:\/\/github\.com\/${USERNAME}\/\([a-zA-Z0-9_-]\+\)\.git\$/\1/"
 STRIP_QUOTATIONS_PATTERN="s/\"//g"
 
 PAGE=0
@@ -191,9 +191,10 @@ else
 fi
 
 for GH_URL in "${URLS[@]}"; do
-	DIRECTORY=$(echo $GH_URL | sed $EXTRACTION_PATTERN | sed $STRIP_QUOTATIONS_PATTERN)
+	DIRECTORY=$(echo "${GH_URL}" | sed "${STRIP_QUOTATIONS_PATTERN}" | sed "${EXTRACTION_PATTERN}")
 	GH_SSH_URL="git@github.com:${USERNAME}/${DIRECTORY}.git"
 	GH_HTTPS_URL="https://github.com/${USERNAME}/${DIRECTORY}.git"
+
 	if [[ $DEBUG -eq $TRUE ]]; then
 		debug "DIRECTORY: ${DIRECTORY}"
 	fi
