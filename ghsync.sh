@@ -1,33 +1,24 @@
 #!/usr/bin/env bash
 
-END="\033[0m"
-BLACK="\033[0;30m"
-WHITE="\033[0;37m"
-RED="\033[0;31m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-BLUE="\033[0;34m"
+source ./vars.sh
 
-TRUE=1
-FALSE=0
-
-trap "cleanUp" SIGINT SIGTERM
+trap 'cleanUp' SIGINT SIGTERM SIGKILL
 
 function cleanUp() {
-	debug "CLEANING UP"
+	debug 'CLEANING UP'
 }
 
 function usage() {
-	TEXT="
-		Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION] \n
-		\t-u USERNAME ===> your Github username \n
-		\t-t TOKEN ======> your token - if you don't have one generate one from https://github.com/settings/tokens \n
-		\t-h ============> display this menu \n
-		\t-d ============> debug mode \n
-		\t-x ============> does a dry run without actually doing any git operations \n
-		\t-c CONNECTION => connection to GitHub either 'ssh' or 'https', defaults to 'ssh' \n
-		\t-v ============> verbose logging
-	"
+	CAT << EOM
+Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION]
+-u USERNAME      your Github username
+-t TOKEN         your token - if you don't have one generate one from https://github.com/settings/tokens
+-h               display this menu
+-d               debug mode
+-x               does a dry run without actually doing any git operations
+-c CONNECTION    connection to GitHub either 'ssh' or 'https', defaults to 'ssh'
+-v               verbose logging
+EOM
 
 	if [[ $1 -eq $TRUE ]]; then
 		echo -e $TEXT 1>&2
@@ -37,23 +28,23 @@ function usage() {
 }
 
 function dry() {
-	echo -e "${BLUE}[DRY_RUN] $1${END}"
+	printf "${COLOR_BLUE}[DRY_RUN] $@${COLOR_END}\n"
 }
 
 function debug() {
-	echo -e "${YELLOW}[DEBUG] $1${END}"
+	printf "${COLOR_YELLOW}[DEBUG] $@${COLOR_END}\n"
 }
 
 function verbose() {
-	echo -e "${GREEN}[VERBOSE] $1${END}"
+	printf "${COLOR_GREEN}[VERBOSE] $@${COLOR_END}\n"
 }
 
 function log() {
-	echo -e "[LOG] $1"
+	printf "[LOG] $@"
 }
 
 function error() {
-	echo -e "${RED}[ERROR] $1${END}"
+	printf "${COLOR_RED}[ERROR] $@${COLOR_END}\n"
 }
 
 DEBUG=$FALSE
@@ -102,7 +93,7 @@ fi
 DEPS=('jq' 'cat' 'less' 'curl' 'git' 'sed' 'bc')
 
 for DEP in "${DEPS[@]}"; do
-	type $DEP > /dev/null 2>&1
+	type $DEP &> /dev/null
 
 	if [[ $? -ne 0 ]]; then
 		error "MISSING DEPENDENCY: ${DEP}"
