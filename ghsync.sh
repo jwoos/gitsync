@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-source ./vars.sh
+set -eu
+
+source "${BASH_SOURCE%/*}/vars.sh"
 
 trap 'cleanUp' SIGINT SIGTERM SIGKILL
 
@@ -40,7 +42,7 @@ function verbose() {
 }
 
 function log() {
-	printf "[LOG] $@"
+	printf "[LOG] $@\n"
 }
 
 function error() {
@@ -84,6 +86,8 @@ while getopts "hdxvu:t:c:" O; do
 	esac
 done
 shift $((OPTIND - 1))
+
+CONNECTION=${CONNECTION:-ssh}
 
 if [[ -z $USERNAME ]] || [[ -z $TOKEN ]]; then
 	usage $TRUE
