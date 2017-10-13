@@ -135,7 +135,7 @@ if [[ $DEBUG -eq $TRUE ]]; then
 	debug "REPO_FILE: ${REPO_FILE}"
 fi
 
-EXTRACTION_PATTERN="s/https:\/\/github\.com\/${USERNAME}\/\([a-zA-Z0-9_-.]\+\)\.git\$/\1/"
+EXTRACTION_PATTERN="s/https:\/\/github\.com\/${USERNAME}\/\([a-zA-Z0-9_.-]\+\)\.git\$/\1/"
 STRIP_QUOTATIONS_PATTERN="s/\"//g"
 
 PAGE=0
