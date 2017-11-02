@@ -94,7 +94,7 @@ if [[ -z $USERNAME ]] || [[ -z $TOKEN ]]; then
 	exit 1
 fi
 
-DEPS=('jq' 'cat' 'less' 'curl' 'git' 'sed' 'bc')
+DEPS=('jq' 'cat' 'less' 'curl' 'git' 'bc')
 
 for DEP in "${DEPS[@]}"; do
 	type $DEP &> /dev/null
@@ -135,11 +135,10 @@ if [[ $DEBUG -eq $TRUE ]]; then
 	debug "REPO_FILE: ${REPO_FILE}"
 fi
 
-EXTRACTION_PATTERN="s/https:\/\/github\.com\/${USERNAME}\/\([a-zA-Z0-9_-.]\+\)\.git\$/\1/"
-STRIP_QUOTATIONS_PATTERN="s/\"//g"
-
 PAGE=0
-URLS=()
+HTTPS_URLS=()
+SSH_URLS=()
+DIRECTORIES=()
 
 while [[ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]]; do
 	curl -s -H "Authorization: token ${TOKEN}" "${GITHUB_BASE}/user/repos?type=owner&page=$((PAGE+1))" > $REPO_FILE
@@ -152,19 +151,13 @@ while [[ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]]; do
 		exit 1
 	fi
 
-	CHUNKED_URLS=$(less $REPO_FILE | jq '.[] | .clone_url')
+	HTTPS_URLS+=( $(less $REPO_FILE | jq -r '.[] | .clone_url') )
+	SSH_URLS+=( $(less $REPO_FILE | jq -r '.[] | .ssh_url') )
+	DIRECTORIES+=( $(less $REPO_FILE | jq -r '.[] | .name') )
 
 	if [[ $DEBUG -eq $TRUE ]]; then
 		debug "NEW PAGE"
 	fi
-
-
-	while read -r GH_URL; do
-		URLS+=("${GH_URL}")
-		if [[ $DEBUG -eq $TRUE ]]; then
-			debug "Working on: ${GH_URL}"
-		fi
-	done <<< "$CHUNKED_URLS"
 
 	((PAGE+=1))
 done
@@ -185,19 +178,19 @@ else
 	exit 1
 fi
 
-for GH_URL in "${URLS[@]}"; do
-	DIRECTORY=$(echo "${GH_URL}" | sed "${STRIP_QUOTATIONS_PATTERN}" | sed "${EXTRACTION_PATTERN}")
-	GH_SSH_URL="git@github.com:${USERNAME}/${DIRECTORY}.git"
-	GH_HTTPS_URL="https://github.com/${USERNAME}/${DIRECTORY}.git"
+for INDEX in "${!HTTPS_URLS[@]}"; do
+	DIRECTORY="${DIRECTORIES[$INDEX]}"
+	GH_SSH_URL="${SSH_URLS[$INDEX]}"
+	GH_HTTPS_URL="${HTTPS_URLS[$INDEX]}"
 
 	if [[ $DEBUG -eq $TRUE ]]; then
 		debug "DIRECTORY: ${DIRECTORY}"
+		debug "SSH_URL: ${GH_SSH_URL}"
+		debug "HTTPS_URL: ${GH_HTTPS_URL}"
 	fi
 
-	GH_URL="$(echo $GH_URL | sed $STRIP_QUOTATIONS_PATTERN)"
-
 	if [[ -d ${DIRECTORY} ]]; then
-		pushd ${DIRECTORY}
+		pushd ${DIRECTORY} &> /dev/null
 
 		BRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 
@@ -223,7 +216,7 @@ for GH_URL in "${URLS[@]}"; do
 			fi
 		fi
 
-		popd
+		popd &> /dev/null
 	else
 		if [[ $DRY_RUN -eq $TRUE ]]; then
 			dry "cloning ${GH_SSH_URL}"
