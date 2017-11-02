@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -u
 
 source "${BASH_SOURCE%/*}/vars.sh"
 
@@ -197,7 +197,10 @@ for INDEX in "${!HTTPS_URLS[@]}"; do
 		if [[ $DRY_RUN -eq $TRUE ]]; then
 			dry "checking out master"
 		else
+			# git stash
+			# STASH_CODE=$?
 			git checkout master
+			# git stash pop
 		fi
 
 		# if checkout errors while switching to master just fetch
