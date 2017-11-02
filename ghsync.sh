@@ -23,9 +23,9 @@ Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION]
 EOM
 
 	if [[ $1 -eq $TRUE ]]; then
-		echo -e $TEXT 1>&2
+		printf "${TEXT}\n" 1>&2
 	else
-		echo -e $TEXT
+		printf "${TEXT}\n"
 	fi
 }
 
@@ -101,7 +101,7 @@ for DEP in "${DEPS[@]}"; do
 
 	if [[ $? -ne 0 ]]; then
 		error "MISSING DEPENDENCY: ${DEP}"
-		echo -e "Please install ${DEP} and try again"
+		printf "Please install ${DEP} and try again\n"
 		exit 1
 	fi
 done
@@ -119,7 +119,7 @@ curl -s -u $USERNAME:$TOKEN $GITHUB_BASE/user > $USER_FILE
 # User has lots of keys, it should be bigger than 8 if successful
 if [[ $(less $USER_FILE | jq 'length' 2>/dev/null) -lt 8 ]]; then
 	error "Error fetching user"
-	echo 'Response: '
+	printf 'Response: \n'
 	cat $USER_FILE
 	exit 1
 fi
@@ -146,7 +146,7 @@ while [[ $(($PAGE * $GITHUB_PER_PAGE)) -lt $REPO_COUNT ]]; do
 	# Check if in an array and has message
 	if [[ -z $(less $REPO_FILE | jq '.[] | .message' 2>/dev/null) ]]; then
 		error "Error fetching repositories"
-		echo 'Response: '
+		printf 'Response: \n'
 		cat $REPO_FILE
 		exit 1
 	fi
