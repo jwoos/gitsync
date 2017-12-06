@@ -1,1 +1,1 @@
-# GHSYNC
+# GitSync
