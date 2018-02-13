@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
+
 set -u
 
+
+# variables
 source "${BASH_SOURCE%/*}/vars.sh"
+# utilities
+source "${BASH_SOURCE%/*}/utils.sh"
+
 
 trap 'cleanUp' SIGINT SIGTERM SIGKILL
+
 
 function cleanUp() {
 	debug 'CLEANING UP'
@@ -31,26 +38,6 @@ EOM
 	fi
 }
 
-function dry() {
-	printf "${COLOR_BLUE}[DRY_RUN] $@${COLOR_END}\n"
-}
-
-function debug() {
-	printf "${COLOR_YELLOW}[DEBUG] $@${COLOR_END}\n"
-}
-
-function verbose() {
-	printf "${COLOR_GREEN}[VERBOSE] $@${COLOR_END}\n"
-}
-
-function log() {
-	printf "[LOG] $@\n"
-}
-
-function error() {
-	printf "${COLOR_RED}[ERROR] $@${COLOR_END}\n"
-}
-
 DEBUG=$FALSE
 VERBOSE=$FALSE
 DRY_RUN=$FALSE
@@ -60,7 +47,7 @@ USERNAME=''
 while getopts "hdxvu:t:c:" OPT; do
 	case "${OPT}" in
 		h)
-			usage
+			usage $FALSE
 			exit 0
 			;;
 		d)
@@ -82,7 +69,7 @@ while getopts "hdxvu:t:c:" OPT; do
 			VERBOSE=$TRUE
 			;;
 		*)
-			usage
+			usage $FALSE
 			exit 0
 			;;
 	esac
@@ -97,16 +84,7 @@ if [[ -z $USERNAME ]] || [[ -z $TOKEN ]]; then
 fi
 
 DEPS=('jq' 'cat' 'less' 'curl' 'git' 'bc')
-
-for DEP in "${DEPS[@]}"; do
-	type $DEP &> /dev/null
-
-	if [[ $? -ne 0 ]]; then
-		error "MISSING DEPENDENCY: ${DEP}"
-		printf "Please install ${DEP} and try again\n"
-		exit 1
-	fi
-done
+checkDependencies $DEPS
 
 GITHUB_BASE='https://api.github.com'
 GITHUB_PER_PAGE=30
