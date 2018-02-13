@@ -11,16 +11,18 @@ function cleanUp() {
 }
 
 function usage() {
-	CAT << EOM
+	local TEXT=$(
+	cat << EOM
 Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION]
--u USERNAME      your Github username
--t TOKEN         your token - if you don't have one generate one from https://github.com/settings/tokens
--h               display this menu
--d               debug mode
--x               does a dry run without actually doing any git operations
--c CONNECTION    connection to GitHub either 'ssh' or 'https', defaults to 'ssh'
--v               verbose logging
+	-u USERNAME      your Github username
+	-t TOKEN         your token - if you don't have one generate one from https://github.com/settings/tokens
+	-h               display this menu
+	-d               debug mode
+	-x               does a dry run without actually doing any git operations
+	-c CONNECTION    connection to GitHub either 'ssh' or 'https', defaults to 'ssh'
+	-v               verbose logging
 EOM
+	)
 
 	if [[ $1 -eq $TRUE ]]; then
 		printf "${TEXT}\n" 1>&2
@@ -55,8 +57,8 @@ DRY_RUN=$FALSE
 TOKEN=''
 USERNAME=''
 
-while getopts "hdxvu:t:c:" O; do
-	case "${O}" in
+while getopts "hdxvu:t:c:" OPT; do
+	case "${OPT}" in
 		h)
 			usage
 			exit 0
