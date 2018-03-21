@@ -1,6 +1,8 @@
 # GitSync
 This is a program to sync your local repositories with remotes (GitHub, with support for other remotes coming soon).
 
+It was originally implemented in shell, which can be found under `archive/`
+
 ## Why?
 I have multiple devices to use - my desktop, desktop VM, laptop, work laptop, work laptop VM. You can imagine it gets kind of crazy remember what I changed where and whether it's the latest or not. Why not create a program to do that for me? I also prefer to have all copies of my code locally both for my convenience and because I'd rather not lose it because I had my only copy on a server I don't own.
 
