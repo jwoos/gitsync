@@ -27,4 +27,5 @@ def main():
     logger.debug(config)
 
 
-main()
+if __name__ == '__main__':
+    main()
