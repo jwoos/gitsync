@@ -1,6 +1,6 @@
 import argparse
 
-from connections import ConnectionType
+from connections import ConnectionType, RemoteType
 
 
 def enum_action(enum):
@@ -19,7 +19,7 @@ def parse_arguments():
     parser.add_argument('action', help='pull | push')
     parser.add_argument('--token', help='GitHub token generated from https://github.com/settings/tokens')
     parser.add_argument('--connection', action=enum_action(ConnectionType), help='Connection to remote: https or ssh')
-    # parser.add_argument('--remote', help='The type of remote')
+    parser.add_argument('--remote', action=enum_action(RemoteType), help='The type of remote: GitHub, GitLab, etc')
     parser.add_argument('--config', help='The path to the configuration file')
     parser.add_argument('-s', '--skip', action='store_true', help='Does a dry run without actually doing any operations')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
@@ -28,11 +28,12 @@ def parse_arguments():
     args = parser.parse_args()
 
     config = {
+        'remote': args.remote,
         'username': args.username,
         'token': args.token,
         'connection': args.connection,
         'debug': args.debug,
-        'verbose': args.verbose
+        'verbose': args.verbose,
     }
 
     return config
