@@ -10,6 +10,7 @@ API_BASE = 'https://api.github.com'
 PER_PAGE_COUNT = 30
 
 
+# get the authenticated user
 async def get_user(username: str, token: str) -> dict:
     async with aiohttp.ClientSession() as session:
         return await fetch(
@@ -20,6 +21,7 @@ async def get_user(username: str, token: str) -> dict:
             },
         )
 
+# get the authenticated user's repos
 async def get_repositories(user: dict, token: str) -> list:
     private_repos = int(user['owned_private_repos'])
     public_repos = int(user['public_repos'])
@@ -30,7 +32,7 @@ async def get_repositories(user: dict, token: str) -> list:
             asyncio.ensure_future(
                 fetch(
                     session,
-                    f'{API_BASE}/user/repos?type=owner&page={page}',
+                    f'{API_BASE}/user/repos?type=owner&sort=full_name&page={page}',
                     headers={
                         'Authorization': f'token {token}',
                     },
