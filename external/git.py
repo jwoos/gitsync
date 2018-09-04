@@ -1,4 +1,8 @@
+import logging
 import subprocess
+
+
+logger = logging.getLogger(__name__)
 
 
 def update_repo():
@@ -18,7 +22,10 @@ def update_repo():
             [
                 'git',
                 'stash',
-            ]
+            ],
+            text=True,
+            capture_output=True,
+            check=True,
         )
 
     branch = subprocess.run(
@@ -59,7 +66,7 @@ def clone_repo(url):
         [
             'git',
             'clone',
-            'url',
+            url,
         ],
         text=True,
         capture_output=True,
