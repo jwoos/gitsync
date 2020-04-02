@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 COLOR_END='\e[0m'
 COLOR_BLACK='\e[0;30m'
 COLOR_WHITE='\e[0;37m'

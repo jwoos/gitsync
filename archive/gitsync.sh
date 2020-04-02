@@ -22,7 +22,7 @@ function usage() {
 	cat << EOM
 Usage: ${0} -u USERNAME -t TOKEN [-d | -h] [-c CONNECTION]
 	-u USERNAME      your Github username
-	-t TOKEN         your token - if you don't have one generate one from https://github.com/settings/tokens
+	-t TOKEN         your token - if you don\'t have one generate one from https://github.com/settings/tokens
 	-h               display this menu
 	-d               debug mode
 	-x               does a dry run without actually doing any git operations

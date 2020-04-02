@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source "${BASH_SOURCE%/*}/vars.sh"
 
 
